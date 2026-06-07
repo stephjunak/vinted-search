@@ -219,6 +219,51 @@
   .tag-chip-btn.confirm:hover { color:#2a9d4e; background:#e8f8ee; }
   .tag-add-row { display:flex; gap:6px; align-items:center; }
   .tag-add-row input { flex:1; padding:5px 10px; border-radius:7px; border:1px solid #ddd; font-size:12px; }
+
+  /* ── ONGLETS (modes) ── */
+  .tabs { display: flex; gap: 8px; margin-bottom: 22px; }
+  .tab { padding: 10px 22px; border-radius: 10px; border: 2px solid #e0e0e0; background: white; color: #888; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .tab:hover { border-color: #e94560; color: #e94560; }
+  .tab.active { border-color: #e94560; background: #e94560; color: white; }
+
+  /* ── VUE MES RECHERCHES ── */
+  .searches-view-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .searches-view-header h2 { font-size: 20px; font-weight: 700; color: #1a1a2e; }
+  .btn-new-search { padding: 10px 20px; background: #1a1a2e; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background 0.15s; }
+  .btn-new-search:hover { background: #0f3460; }
+  /* Layout maître-détail */
+  .sv-layout { display: flex; gap: 18px; align-items: flex-start; }
+  .sv-list { width: 300px; min-width: 260px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+  .sv-item { display: flex; align-items: center; gap: 10px; background: white; border: 2px solid transparent; border-radius: 10px; padding: 11px 12px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: all 0.15s; }
+  .sv-item:hover { border-color: #e8e8e8; }
+  .sv-item.active { border-color: #e94560; background: #fff0f3; }
+  .sv-item-name { flex: 1; font-size: 14px; font-weight: 600; color: #1a1a2e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sv-item-go { flex-shrink: 0; width: 34px; height: 34px; border-radius: 8px; border: none; background: #09af6b; color: white; cursor: pointer; font-size: 13px; font-weight: 700; transition: background 0.15s; }
+  .sv-item-go:hover { background: #078055; }
+  .sv-list-empty { text-align: center; color: #999; padding: 30px 10px; font-size: 13px; }
+
+  /* Panneau détail */
+  .sv-detail { flex: 1; min-width: 0; background: white; border-radius: 14px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); min-height: 320px; }
+  .sv-detail-empty { color: #aaa; text-align: center; padding: 90px 20px; font-size: 15px; }
+  .sv-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
+  .sv-detail-title { font-size: 20px; font-weight: 700; color: #1a1a2e; }
+  .sv-detail-actions { display: flex; gap: 8px; }
+
+  /* Blocs / étiquettes (réutilisés dans le détail) */
+  .scard-block { margin-bottom: 18px; }
+  .scard-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; font-weight: 700; margin-bottom: 8px; }
+  .scard-crit-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .scard-brands { display: flex; flex-wrap: wrap; gap: 6px; }
+  .scard-brands.cols { display: block; column-width: 150px; column-gap: 12px; }
+  .scard-brands.cols .scard-chip { display: block; width: fit-content; margin-bottom: 6px; break-inside: avoid; }
+  .scard-chip { font-size: 13px; background: #fff0f3; color: #e94560; border: 1px solid #f8d5dd; border-radius: 14px; padding: 4px 11px; font-weight: 600; }
+  .scard-chip.crit { background: #f0f4ff; color: #0f3460; border-color: #d6e0f5; }
+  .scard-chip.cat { background: #eef9f2; color: #09af6b; border-color: #cdeedd; }
+  .scard-empty-crit { font-size: 13px; color: #bbb; font-style: italic; }
+  .scard-open { padding: 11px 22px; background: #09af6b; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 700; transition: background 0.15s; }
+  .scard-open:hover { background: #078055; }
+  .scard-edit { padding: 11px 18px; background: white; color: #666; border: 1px solid #ddd; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.15s; }
+  .scard-edit:hover { background: #f5f5f5; color: #1a1a2e; }
 </style>
 </head>
 <body>
@@ -355,6 +400,27 @@
 
   <!-- MAIN -->
   <div class="main">
+
+    <!-- ONGLETS -->
+    <div class="tabs">
+      <button class="tab active" id="tabSearches" onclick="switchMode('search')">🔍 Mes recherches</button>
+      <button class="tab" id="tabBuilder" onclick="switchMode('build')">✏️ Création</button>
+    </div>
+
+    <!-- VUE MES RECHERCHES -->
+    <div id="viewSearches">
+      <div class="searches-view-header">
+        <h2>Mes recherches</h2>
+        <button class="btn-new-search" onclick="newSearchFromView()">＋ Nouvelle recherche</button>
+      </div>
+      <div class="sv-layout">
+        <div class="sv-list" id="svList"></div>
+        <div class="sv-detail" id="svDetail"></div>
+      </div>
+    </div>
+
+    <!-- VUE CRÉATION -->
+    <div id="viewBuilder" style="display:none">
     <div class="main-header">
       <h2 id="mainTitle">Nouvelle recherche</h2>
       <button class="btn-open" onclick="openSearch()">▶ Ouvrir sur Vinted</button>
@@ -448,6 +514,7 @@
       <h3>URL générée</h3>
       <div class="url-text" id="urlPreview">Sélectionne des filtres pour générer l'URL...</div>
     </div>
+    </div><!-- /viewBuilder -->
   </div>
 </div>
 
@@ -629,6 +696,7 @@ async function init() {
   document.getElementById('priceMin').addEventListener('input', updatePreview);
   document.getElementById('priceMax').addEventListener('input', updatePreview);
   document.getElementById('orderSelect').addEventListener('change', updatePreview);
+  switchMode('search'); // démarre sur la vue "Mes recherches"
 }
 
 // ── CATÉGORIES ────────────────────────────────────────────────────────
@@ -1676,6 +1744,161 @@ function applyBulkReplace() {
   alert('✅ ' + count + ' marque(s) mise(s) à jour');
   populateBmCatFilter();
   renderBrandModalList();
+}
+
+// ── MODE "MES RECHERCHES" (vue usage) ─────────────────────────────────
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+const ORDER_LABELS = {
+  newest_first: 'Plus récents',
+  relevance: 'Pertinence',
+  price_high_to_low: 'Prix décroissant',
+  price_low_to_high: 'Prix croissant',
+};
+
+// Reconstruit l'URL Vinted depuis un état sauvegardé (miroir de buildParams)
+function buildParamsFromState(state) {
+  const params = new URLSearchParams();
+  const allCatIds = new Set();
+  (state.cats || []).forEach(key => getCatIds(key).forEach(id => allCatIds.add(id)));
+  allCatIds.forEach(id => params.append('catalog[]', id));
+  (state.brands || []).forEach(id => params.append('brand_ids[]', id));
+  (state.status || []).forEach(v => params.append('status_ids[]', v));
+  (state.sizes  || []).forEach(v => params.append('size_ids[]', v));
+  (state.shoes  || []).forEach(v => params.append('size_ids[]', v));
+  if (state.priceMin) params.set('price_from', state.priceMin);
+  if (state.priceMax) params.set('price_to', state.priceMax);
+  params.set('order', state.order || 'newest_first');
+  return params;
+}
+
+function openSearchByName(name) {
+  const searches = JSON.parse(localStorage.getItem('vintedSearches') || '[]');
+  const entry = searches.find(s => s.name === name);
+  if (!entry) return;
+  const params = buildParamsFromState(entry.state || {});
+  window.open('https://www.vinted.fr/catalog?' + params.toString(), '_blank');
+}
+
+function catLabelsFromState(state) {
+  return (state.cats || []).map(key => {
+    const parts = key.split('-').map(Number);
+    const cat = CATEGORIES[parts[0]];
+    if (!cat) return null;
+    if (parts.length === 1) return cat.label;
+    return cat.children?.[parts[1]]?.label || null;
+  }).filter(Boolean);
+}
+
+let selectedSearchName = null; // recherche affichée dans le panneau détail
+
+function getSearches() {
+  return JSON.parse(localStorage.getItem('vintedSearches') || '[]');
+}
+
+// Vue maître-détail : liste à gauche + détail à droite
+function renderSearchView() {
+  const searches = getSearches();
+  // Conserver la sélection si toujours valide, sinon prendre la première
+  if (!searches.some(s => s.name === selectedSearchName)) {
+    selectedSearchName = searches.length ? searches[0].name : null;
+  }
+  renderSearchList(searches);
+  renderSearchDetail(selectedSearchName);
+}
+
+function renderSearchList(searches) {
+  const list = document.getElementById('svList');
+  if (!searches.length) {
+    list.innerHTML = '<div class="sv-list-empty">Aucune recherche enregistrée.<br>Clique sur « ＋ Nouvelle recherche ».</div>';
+    return;
+  }
+  list.innerHTML = searches.map(s => {
+    const safeName = s.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const active = s.name === selectedSearchName ? ' active' : '';
+    return `<div class="sv-item${active}" onclick="selectSearch('${safeName}')">
+      <span class="sv-item-name">${escHtml(s.name)}</span>
+      <button class="sv-item-go" title="Voir sur Vinted" onclick="event.stopPropagation(); openSearchByName('${safeName}')">▶</button>
+    </div>`;
+  }).join('');
+}
+
+function renderSearchDetail(name) {
+  const panel = document.getElementById('svDetail');
+  const entry = getSearches().find(s => s.name === name);
+  if (!entry) {
+    panel.innerHTML = '<div class="sv-detail-empty">Sélectionne une recherche à gauche pour voir son détail.</div>';
+    return;
+  }
+  const st = entry.state || {};
+  const safeName = entry.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+  const brandMap = {};
+  loadBrands().forEach(b => { brandMap[b.id] = b.name; });
+  const brandNames = (st.brands || []).map(id => brandMap[id] || ('#' + id))
+    .sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+  const brandsHtml = brandNames.length
+    ? brandNames.map(n => `<span class="scard-chip">${escHtml(n)}</span>`).join('')
+    : '<span class="scard-empty-crit">Aucune marque</span>';
+
+  const crit = [];
+  catLabelsFromState(st).forEach(l => crit.push(`<span class="scard-chip cat">${escHtml(l)}</span>`));
+  (st.status || []).map(v => STATUS_LABELS[v]).filter(Boolean).forEach(l => crit.push(`<span class="scard-chip crit">${escHtml(l)}</span>`));
+  (st.sizes  || []).map(v => SIZE_LABELS[v]).filter(Boolean).forEach(l => crit.push(`<span class="scard-chip crit">${escHtml(l)}</span>`));
+  (st.shoes  || []).map(v => SHOE_SIZE_LABELS[v]).filter(Boolean).forEach(l => crit.push(`<span class="scard-chip crit">pt. ${escHtml(l)}</span>`));
+  if (st.priceMin || st.priceMax) {
+    crit.push(`<span class="scard-chip crit">${escHtml((st.priceMin || '0') + '–' + (st.priceMax || '∞') + ' €')}</span>`);
+  }
+  if (st.order && st.order !== 'newest_first' && ORDER_LABELS[st.order]) {
+    crit.push(`<span class="scard-chip crit">${escHtml(ORDER_LABELS[st.order])}</span>`);
+  }
+  const critHtml = crit.length ? crit.join('') : '<span class="scard-empty-crit">Aucun critère</span>';
+
+  panel.innerHTML = `
+    <div class="sv-detail-head">
+      <div class="sv-detail-title">${escHtml(entry.name)}</div>
+      <div class="sv-detail-actions">
+        <button class="scard-open" onclick="openSearchByName('${safeName}')">▶ Voir sur Vinted</button>
+        <button class="scard-edit" onclick="editFromCard('${safeName}')">✏️ Modifier</button>
+      </div>
+    </div>
+    <div class="scard-block">
+      <div class="scard-label">Critères</div>
+      <div class="scard-crit-row">${critHtml}</div>
+    </div>
+    <div class="scard-block">
+      <div class="scard-label">Marques (${brandNames.length})</div>
+      <div class="scard-brands cols">${brandsHtml}</div>
+    </div>`;
+}
+
+function selectSearch(name) {
+  selectedSearchName = name;
+  renderSearchView();
+}
+
+function switchMode(mode) {
+  const isSearch = mode === 'search';
+  document.getElementById('viewSearches').style.display = isSearch ? '' : 'none';
+  document.getElementById('viewBuilder').style.display  = isSearch ? 'none' : '';
+  document.querySelector('.sidebar').style.display       = isSearch ? 'none' : '';
+  document.getElementById('tabSearches').classList.toggle('active', isSearch);
+  document.getElementById('tabBuilder').classList.toggle('active', !isSearch);
+  if (isSearch) renderSearchView();
+}
+
+function newSearchFromView() {
+  newSearch();
+  switchMode('build');
+}
+
+function editFromCard(name) {
+  loadSearch(name);
+  switchMode('build');
 }
 
 init();
