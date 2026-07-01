@@ -529,19 +529,46 @@ async function sbLoad() {
     const r = await fetch(`${SB_URL}/vinted_search_settings?select=key,value`, { headers: SB_H });
     const rows = await r.json();
     if (Array.isArray(rows)) {
-      rows.forEach(row => localStorage.setItem(row.key, JSON.stringify(row.value)));
+      rows.forEach(row => {
+        const remoteIsEmpty = Array.isArray(row.value) && row.value.length === 0;
+        const localVal = localStorage.getItem(row.key);
+        const localHasData = localVal && localVal !== '[]' && localVal !== 'null';
+        if (remoteIsEmpty && localHasData) {
+          // Supabase vide + local non vide = ne jamais écraser le local avec du vide
+          console.warn(`Supabase renvoie "${row.key}" vide alors que le local contient des données : le local est conservé.`);
+          return;
+        }
+        localStorage.setItem(row.key, JSON.stringify(row.value));
+      });
     }
   } catch(e) {
     console.warn('Supabase inaccessible, fallback localStorage', e);
   }
 }
 
-function sbSave(key, jsonStr) {
-  fetch(`${SB_URL}/vinted_search_settings`, {
-    method: 'POST',
-    headers: { ...SB_H, 'Prefer': 'resolution=merge-duplicates' },
-    body: JSON.stringify({ key, value: JSON.parse(jsonStr) })
-  }).catch(e => console.warn('Supabase sync échoué:', e));
+async function sbSave(key, jsonStr) {
+  try {
+    const newVal = JSON.parse(jsonStr);
+    const newIsEmpty = Array.isArray(newVal) && newVal.length === 0;
+    if (newIsEmpty) {
+      // Avant d'écraser Supabase avec du vide, vérifier qu'on ne détruit pas des données existantes
+      const check = await fetch(`${SB_URL}/vinted_search_settings?select=value&key=eq.${key}`, { headers: SB_H });
+      const rows = await check.json();
+      const remoteVal = Array.isArray(rows) && rows[0] ? rows[0].value : null;
+      const remoteHasData = Array.isArray(remoteVal) && remoteVal.length > 0;
+      if (remoteHasData && !confirm(`Cette action va vider "${key}" sur Supabase alors qu'il contient actuellement ${remoteVal.length} élément(s). Confirmer ?`)) {
+        console.warn(`Sync annulée pour "${key}" : écrasement de données non vides refusé.`);
+        return;
+      }
+    }
+    await fetch(`${SB_URL}/vinted_search_settings`, {
+      method: 'POST',
+      headers: { ...SB_H, 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({ key, value: newVal })
+    });
+  } catch(e) {
+    console.warn('Supabase sync échoué:', e);
+  }
 }
 
 // ── CATÉGORIES (localStorage) ─────────────────────────────────────────
