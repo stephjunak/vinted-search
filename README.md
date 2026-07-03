@@ -25,11 +25,13 @@ Fonctionnel. Historique des commits :
 1. Version initiale avec sync Supabase
 2. Ajout de la vue « Mes recherches » (maître-détail)
 3. Ajout du proxy local de recherche de marques
+4. Sélection des catégories parentes (option « (toutes) »)
 
 Pas de déploiement en ligne : usage 100% local (fichier HTML ouvert directement + proxy Python lancé à la main).
 
 ## Historique des sessions
 
+- **2026-07-03** : ajout de la sélection des catégories parentes. Quand une catégorie a des sous-catégories ET son propre ID catalogue, le sous-menu affiche en premier une option « … (toutes) » cochable, qui envoie l'ID du parent (ex : « Chaussures (toutes) » → `catalog[]=16`). Avant, seul le choix d'une sous-catégorie était possible. Touche `getCatIds()` (renvoie l'ID du parent même s'il a des enfants), `buildCategories()` (rend l'option « (toutes) » quand le parent a un ID) et `toggleCat()` (pastille parente marquée active si le parent OU un enfant est coché). Aucun impact sur les données. Vérifié en conditions réelles (catégories chargées depuis Supabase).
 - **2026-07-01** : incident de perte de données (les recherches sauvegardées `vintedSearches` se sont retrouvées vides en local et sur Supabase ; marques, catégories et étiquettes intactes). Cause : synchro aveugle, le vide pouvait écraser le plein dans les deux sens. Correctif appliqué et testé en conditions réelles contre la base Supabase : `sbLoad()` ne remplace plus une valeur locale non vide par une valeur Supabase vide ; `sbSave()` demande confirmation avant d'écraser une valeur Supabase non vide par du vide. Les recherches perdues n'ont pas pu être récupérées (pas de Time Machine, pas d'export JSON existant).
 
 ## Bugs connus / backlog

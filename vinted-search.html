@@ -734,8 +734,7 @@ function getCatIds(key) {
   const cat = CATEGORIES[parts[0]];
   if (!cat) return [];
   if (parts.length === 1) {
-    // Si ce parent a des enfants, on n'utilise pas ses propres IDs (seulement les sous-catégories)
-    if (cat.children && cat.children.length > 0) return [];
+    // Sélection du parent : on utilise son propre ID catalogue (même s'il a des sous-catégories)
     return cat.id || [];
   }
   return (cat.children?.[parts[1]]?.id) || [];
@@ -754,19 +753,29 @@ function buildCategories() {
       label.innerHTML = `<input type="checkbox" data-key="${key}" ${selectedCatKeys.has(key) ? 'checked' : ''} onchange="toggleCat(this)"> ${cat.emoji} ${cat.label}`;
       grid.appendChild(label);
     } else {
-      // Chip avec enfants — on ne peut pas sélectionner le parent directement
-      selectedCatKeys.delete(catKey(i)); // nettoie toute sélection parente résiduelle
+      // Chip avec enfants : parent sélectionnable via l'option « (toutes) » s'il a son propre ID
+      const parentKey   = catKey(i);
+      const hasParentId = cat.id && cat.id.length > 0;
+      if (!hasParentId) selectedCatKeys.delete(parentKey); // parent « groupe » sans ID : pas sélectionnable
       const wrapper = document.createElement('div');
       wrapper.className = 'cat-expandable';
+      const parentSelected   = selectedCatKeys.has(parentKey);
       const anyChildSelected = cat.children.some((_, j) => selectedCatKeys.has(catKey(i, j)));
-      const isOpen = anyChildSelected; // Auto-déplier si des enfants sont sélectionnés
+      const anySelected      = parentSelected || anyChildSelected;
+      const isOpen = anySelected; // Auto-déplier si le parent ou une sous-catégorie est sélectionné
+      const parentAllChip = hasParentId
+        ? `<label class="child-chip ${parentSelected ? 'selected' : ''}">
+             <input type="checkbox" data-key="${parentKey}" ${parentSelected ? 'checked' : ''} onchange="toggleCat(this)">
+             ${cat.emoji || ''} ${cat.label} (toutes)
+           </label>`
+        : '';
       wrapper.innerHTML = `
-        <div class="cat-parent-chip ${anyChildSelected ? 'has-selected' : ''}" onclick="toggleExpand(this, ${i})">
+        <div class="cat-parent-chip ${anySelected ? 'has-selected' : ''}" onclick="toggleExpand(this, ${i})">
           <span class="cat-arrow ${isOpen ? 'open' : ''}">▶</span>
           ${cat.emoji} ${cat.label}
-          ${cat.id && cat.id.length ? '' : ''}
         </div>
         <div class="cat-children ${isOpen ? 'open' : ''}" id="catChildren_${i}">
+          ${parentAllChip}
           ${cat.children.map((child, j) => {
             const key = catKey(i, j);
             return `<label class="child-chip ${selectedCatKeys.has(key) ? 'selected' : ''}">
@@ -793,14 +802,13 @@ function toggleCat(cb) {
   if (cb.checked) selectedCatKeys.add(key);
   else selectedCatKeys.delete(key);
   cb.closest('label').classList.toggle('selected', cb.checked);
-  // Mettre à jour le style du parent si c'est un enfant
-  if (key.includes('-')) {
-    const parentIdx = key.split('-')[0];
-    const parentChip = document.querySelector(`.cat-expandable:nth-child(${+parentIdx + 1}) .cat-parent-chip`);
-    if (parentChip) {
-      const anySelected = CATEGORIES[parentIdx]?.children?.some((_, j) => selectedCatKeys.has(catKey(parentIdx, j)));
-      parentChip.classList.toggle('has-selected', !!anySelected);
-    }
+  // Mettre à jour le style de la pastille parente (parent lui-même OU une sous-catégorie coché)
+  const parentIdx = Number(key.split('-')[0]);
+  const parentChip = document.querySelector(`.cat-expandable:nth-child(${parentIdx + 1}) .cat-parent-chip`);
+  if (parentChip) {
+    const parentSelected   = selectedCatKeys.has(catKey(parentIdx));
+    const anyChildSelected = CATEGORIES[parentIdx]?.children?.some((_, j) => selectedCatKeys.has(catKey(parentIdx, j)));
+    parentChip.classList.toggle('has-selected', parentSelected || !!anyChildSelected);
   }
   updateCatCount();
   updatePreview();
