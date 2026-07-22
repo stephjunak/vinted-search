@@ -26,11 +26,13 @@ Fonctionnel. Historique des commits :
 2. Ajout de la vue « Mes recherches » (maître-détail)
 3. Ajout du proxy local de recherche de marques
 4. Sélection des catégories parentes (option « (toutes) »)
+5. Correction des badges 📌 « marques déjà utilisées »
 
 Pas de déploiement en ligne : usage 100% local (fichier HTML ouvert directement + proxy Python lancé à la main).
 
 ## Historique des sessions
 
+- **2026-07-22** : correction des badges 📌 « marques déjà utilisées ». Rappel du fonctionnement voulu, une case cochée signifie « marque présente dans la recherche en cours », et les marques utilisées dans les *autres* recherches sont signalées par un badge 📌 qui les nomme (jamais par une case cochée). Deux bugs, tous deux dus au même schéma : `buildBrands()` était appelé avant que `activeSearchName` soit à jour, donc la liste était dessinée en croyant éditer la recherche précédente. Dans `newSearch()`, `setEditMode(null)` est remonté avant `buildBrands()` (sinon les marques de la recherche qu'on venait de quitter perdaient leur 📌). Dans `loadSearch()`, `setEditMode(name)` est remonté avant `setState()` (sinon la recherche ouverte s'auto-signalait avec son propre nom, et la précédente perdait son 📌). `saveSearch()`, `duplicateSearch()` et `deleteSearch()` faisaient déjà l'ordre correct. Vérifié en conditions réelles sur les 4 recherches chargées depuis Supabase, en lecture seule (aucune des fonctions touchées n'écrit).
 - **2026-07-03** : ajout de la sélection des catégories parentes. Quand une catégorie a des sous-catégories ET son propre ID catalogue, le sous-menu affiche en premier une option « … (toutes) » cochable, qui envoie l'ID du parent (ex : « Chaussures (toutes) » → `catalog[]=16`). Avant, seul le choix d'une sous-catégorie était possible. Touche `getCatIds()` (renvoie l'ID du parent même s'il a des enfants), `buildCategories()` (rend l'option « (toutes) » quand le parent a un ID) et `toggleCat()` (pastille parente marquée active si le parent OU un enfant est coché). Aucun impact sur les données. Vérifié en conditions réelles (catégories chargées depuis Supabase).
 - **2026-07-01** : incident de perte de données (les recherches sauvegardées `vintedSearches` se sont retrouvées vides en local et sur Supabase ; marques, catégories et étiquettes intactes). Cause : synchro aveugle, le vide pouvait écraser le plein dans les deux sens. Correctif appliqué et testé en conditions réelles contre la base Supabase : `sbLoad()` ne remplace plus une valeur locale non vide par une valeur Supabase vide ; `sbSave()` demande confirmation avant d'écraser une valeur Supabase non vide par du vide. Les recherches perdues n'ont pas pu être récupérées (pas de Time Machine, pas d'export JSON existant).
 
@@ -40,4 +42,4 @@ Pas de déploiement en ligne : usage 100% local (fichier HTML ouvert directement
   - Dans `vinted-search.html`, la fonction `copyProxyCommand()` (~ligne 1578) copie la commande avec le chemin `/Users/stephanie/Documents/Claude/app favoris/vinted_proxy.py` — mauvais dossier (`app favoris` au lieu de `app Vinted recherche`) et chemin obsolète (le projet est maintenant sous `Projects/`).
   - `commande python.rtf` contient aussi un chemin obsolète (`/Users/stephanie/Documents/Claude/app Vinted recherche/...` sans `Projects/`).
   - À corriger : chemin réel actuel = `/Users/stephanie/Documents/Claude/Projects/app Vinted recherche/vinted_proxy.py`.
-- Pas de backlog fonctionnel identifié au-delà de ce correctif.
+- **Badge 📌 peu visible** : le badge « déjà utilisée » est un texte discret en bout de ligne, noyé dans une liste de ~190 marques. C'est probablement pour ça que le bug d'ordre d'appel corrigé le 2026-07-22 est passé inaperçu si longtemps. Piste : le rendre plus lisible (contraste, position, ou compteur en tête de liste).

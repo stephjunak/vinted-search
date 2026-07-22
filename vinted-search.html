@@ -1243,6 +1243,7 @@ function setEditMode(name) {
 }
 
 function newSearch() {
+  setEditMode(null); // avant buildBrands() : sinon les marques de la recherche précédente restent exclues du badge 📌
   selectedCatKeys.clear();
   selectedBrands.clear();
   buildCategories();
@@ -1255,7 +1256,6 @@ function newSearch() {
   document.getElementById('priceMin').value = '';
   document.getElementById('priceMax').value = '';
   document.getElementById('orderSelect').value = 'newest_first';
-  setEditMode(null);
   updatePreview();
 }
 
@@ -1285,9 +1285,9 @@ function loadSearch(name) {
   const searches = JSON.parse(localStorage.getItem('vintedSearches') || '[]');
   const entry = searches.find(s => s.name === name);
   if (entry) {
+    setEditMode(name); // avant setState() : buildBrands() doit connaître la recherche active pour le badge 📌
     setState(entry.state);
     document.getElementById('searchName').value = name;
-    setEditMode(name);
     renderSavedSearches(); // rafraîchit l'état actif dans la liste
   }
 }
