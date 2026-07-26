@@ -1584,12 +1584,43 @@ function toggleBrandCat(idx, cat, btn) {
 }
 
 function deleteBrand(idx) {
-  if (!confirm('Supprimer cette marque ?')) return;
   const brands = loadBrands();
+  const brand = brands[idx];
+  if (!brand) return;
+  const bid = Number(brand.id);
+  // Repérer les recherches sauvegardées qui utilisent cette marque
+  const searches = JSON.parse(localStorage.getItem('vintedSearches') || '[]');
+  const usedIn = searches
+    .filter(s => (s.state?.brands || []).some(id => Number(id) === bid))
+    .map(s => s.name);
+  const warn = usedIn.length
+    ? `\n\nElle est utilisée dans ${usedIn.length} recherche(s) : ${usedIn.join(', ')}.\nElle en sera aussi retirée.`
+    : '';
+  if (!confirm(`Supprimer la marque "${brand.name}" ?${warn}`)) return;
+  // Retirer du catalogue
   brands.splice(idx, 1);
   saveBrands(brands);
+  // Cascade : retirer l'id de toutes les recherches sauvegardées
+  if (usedIn.length) {
+    searches.forEach(s => {
+      if (s.state && Array.isArray(s.state.brands)) {
+        s.state.brands = s.state.brands.filter(id => Number(id) !== bid);
+      }
+    });
+    const str = JSON.stringify(searches);
+    localStorage.setItem('vintedSearches', str);
+    sbSave('vintedSearches', str);
+  }
+  // Si la marque est cochée dans la recherche en cours d'édition, la décocher à l'écran
+  if (selectedBrands.has(bid)) {
+    selectedBrands.delete(bid);
+    updateBrandCount();
+    updatePreview();
+  }
   populateBmCatFilter();
   renderBrandModalList();
+  renderSavedSearches();
+  buildBrands();
 }
 
 async function checkProxyStatus() {
