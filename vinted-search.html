@@ -1493,7 +1493,12 @@ function openBrandModal() {
   document.getElementById('bmBulkCat').innerHTML = '<option value="">— Étiquette —</option>' + tagOpts;
   document.getElementById('brTo').innerHTML = '<option value="">— Étiquette cible —</option>' + tagOpts;
   document.getElementById('brandModal').classList.add('open');
-  checkProxyStatus();
+  // Ne plus sonder le proxy automatiquement à l'ouverture : cette requête vers localhost gèle Safari par intermittence.
+  // Vérif à la demande via le bouton ↺ ; « Chercher ID » teste déjà le proxy quand tu l'utilises.
+  document.getElementById('proxyDot').textContent = '⚪';
+  document.getElementById('proxyLabel').style.color = '#888';
+  document.getElementById('proxyLabel').textContent = 'Proxy non vérifié — clique sur ↺ pour tester (utile seulement pour « Chercher ID »)';
+  document.getElementById('proxyCopyBtn').style.display = 'none';
 }
 function closeBrandModal() {
   document.getElementById('brandModal').classList.remove('open');
@@ -1527,23 +1532,21 @@ function renderBrandModalList() {
   const brands = loadBrands();
   const q   = document.getElementById('bmSearch').value.toLowerCase();
   const cat = document.getElementById('bmCatFilter').value;
+  // Index de chaque marque, calculé une fois : évite un indexOf() en O(n) par ligne (O(n²) sur ~633 marques)
+  const idxOf = new Map(brands.map((b, i) => [b, i]));
   const filtered = brands.filter(b => {
     const matchName = b.name.toLowerCase().includes(q);
     const bCats = getCategories(b);
     const matchCat = !cat ? true : cat === '__none__' ? bCats.length === 0 : bCats.includes(cat);
     return matchName && matchCat;
   });
-  // Étiquettes définies (liste gérée séparément, pas les catégories de recherche Vinted)
-  const allBrandCats = loadBrandTags();
   const container = document.getElementById('brandModalList');
   if (!filtered.length) { container.innerHTML = '<div style="padding:20px;text-align:center;color:#aaa;font-size:13px">Aucune marque trouvée</div>'; return; }
   container.innerHTML = filtered.map(brand => {
-    const realIdx = brands.indexOf(brand);
+    const realIdx = idxOf.get(brand);
     const brandCats = getCategories(brand);
     const isChecked = bmSelected.has(realIdx);
-    const catToggles = allBrandCats.map(c =>
-      `<button class="bm-cat-toggle ${brandCats.includes(c) ? 'on' : ''}"
-        onclick="toggleBrandCat(${realIdx}, '${c}', this)">${c}</button>`).join('');
+    // Boutons d'étiquette rendus paresseusement (voir toggleBmEdit) : ne pas créer des milliers d'éléments masqués à l'ouverture
     return `
       <div class="bm-item" id="bmRow_${realIdx}" style="${isChecked ? 'background:#fff8f0' : ''}">
         <input type="checkbox" class="bm-item-check" ${isChecked ? 'checked' : ''} onchange="toggleBmSelect(${realIdx}, this)">
@@ -1552,7 +1555,7 @@ function renderBrandModalList() {
           <div class="bm-item-cats" id="bmCats_${realIdx}">
             ${brandCats.map(c => `<span class="bm-cat-badge">${c}</span>`).join('')}
           </div>
-          <div class="bm-edit-cats" id="bmEdit_${realIdx}">${catToggles}</div>
+          <div class="bm-edit-cats" id="bmEdit_${realIdx}"></div>
         </div>
         <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
           <button class="btn-icon" onclick="toggleBmEdit(${realIdx})" title="Modifier catégories">✏️</button>
@@ -1564,7 +1567,16 @@ function renderBrandModalList() {
 }
 
 function toggleBmEdit(idx) {
-  document.getElementById('bmEdit_' + idx)?.classList.toggle('open');
+  const editEl = document.getElementById('bmEdit_' + idx);
+  // Construction paresseuse : les boutons d'étiquette ne sont créés qu'au premier clic sur ✏️ de cette ligne
+  if (editEl && !editEl.dataset.built) {
+    const brandCats = getCategories(loadBrands()[idx]);
+    editEl.innerHTML = loadBrandTags().map(c =>
+      `<button class="bm-cat-toggle ${brandCats.includes(c) ? 'on' : ''}"
+        onclick="toggleBrandCat(${idx}, '${c}', this)">${c}</button>`).join('');
+    editEl.dataset.built = '1';
+  }
+  editEl?.classList.toggle('open');
   document.getElementById('bmCats_' + idx)?.classList.toggle('open');
 }
 
