@@ -524,51 +524,18 @@ const SB_URL = 'https://ilgmcxpfqlclvmxdphvg.supabase.co/rest/v1';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsZ21jeHBmcWxjbHZteGRwaHZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDU4NjUsImV4cCI6MjA5NTcyMTg2NX0.6ua-ndJekU0zJ0USap2wHd7qRBB0YPI4Onc4BIiJrsU';
 const SB_H   = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
 
+// Synchro Supabase désactivée le 20 août 2026 : l'app ne tourne plus que sur
+// localStorage (usage mono-appareil confirmé). Objectif : libérer le slot
+// gratuit Supabase pour le projet Modup. Sauvegardes de sécurité prises avant
+// la coupure : backup-supabase-2026-08-20.json et backup-local-2026-08-20.json
+// (comparées, identiques). sbLoad/sbSave laissées en place en no-op plutôt que
+// supprimées, pour ne toucher à aucun des points d'appel existants.
 async function sbLoad() {
-  try {
-    const r = await fetch(`${SB_URL}/vinted_search_settings?select=key,value`, { headers: SB_H });
-    const rows = await r.json();
-    if (Array.isArray(rows)) {
-      rows.forEach(row => {
-        const remoteIsEmpty = Array.isArray(row.value) && row.value.length === 0;
-        const localVal = localStorage.getItem(row.key);
-        const localHasData = localVal && localVal !== '[]' && localVal !== 'null';
-        if (remoteIsEmpty && localHasData) {
-          // Supabase vide + local non vide = ne jamais écraser le local avec du vide
-          console.warn(`Supabase renvoie "${row.key}" vide alors que le local contient des données : le local est conservé.`);
-          return;
-        }
-        localStorage.setItem(row.key, JSON.stringify(row.value));
-      });
-    }
-  } catch(e) {
-    console.warn('Supabase inaccessible, fallback localStorage', e);
-  }
+  return;
 }
 
 async function sbSave(key, jsonStr) {
-  try {
-    const newVal = JSON.parse(jsonStr);
-    const newIsEmpty = Array.isArray(newVal) && newVal.length === 0;
-    if (newIsEmpty) {
-      // Avant d'écraser Supabase avec du vide, vérifier qu'on ne détruit pas des données existantes
-      const check = await fetch(`${SB_URL}/vinted_search_settings?select=value&key=eq.${key}`, { headers: SB_H });
-      const rows = await check.json();
-      const remoteVal = Array.isArray(rows) && rows[0] ? rows[0].value : null;
-      const remoteHasData = Array.isArray(remoteVal) && remoteVal.length > 0;
-      if (remoteHasData && !confirm(`Cette action va vider "${key}" sur Supabase alors qu'il contient actuellement ${remoteVal.length} élément(s). Confirmer ?`)) {
-        console.warn(`Sync annulée pour "${key}" : écrasement de données non vides refusé.`);
-        return;
-      }
-    }
-    await fetch(`${SB_URL}/vinted_search_settings`, {
-      method: 'POST',
-      headers: { ...SB_H, 'Prefer': 'resolution=merge-duplicates' },
-      body: JSON.stringify({ key, value: newVal })
-    });
-  } catch(e) {
-    console.warn('Supabase sync échoué:', e);
-  }
+  return;
 }
 
 // ── CATÉGORIES (localStorage) ─────────────────────────────────────────
