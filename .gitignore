@@ -1,0 +1,3 @@
+# Sauvegardes locales : contiennent de vraies données perso (recherches, marques),
+# ce dépôt est public, elles ne doivent jamais être poussées.
+backup-*.json
